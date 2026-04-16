@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
-public class NewMonoBehaviourScript : MonoBehaviour
+public class crawl : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float crawlSpeed = 2.5f;
