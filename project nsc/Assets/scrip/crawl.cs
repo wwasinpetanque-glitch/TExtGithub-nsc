@@ -1,47 +1,45 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(BoxCollider))]
 public class crawl : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float crawlSpeed = 2.5f;
-    public float gravity = -9.81f;
 
     [Header("Look Settings")]
     public Transform cameraTransform;
     public float mouseSensitivity = 0.5f;
     private float xRotation = 0f;
 
-    private CharacterController controller;
+    private Rigidbody rb;
     private Animator anim;
-    private Vector3 velocity;
-    private Transform rootBone; // ตัวช่วยบล็อกการวาร์ป
+    private Transform rootBone;
 
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
 
-        // 1. ตั้งค่าพื้นฐาน: ล็อคเมาส์
+        // ตั้งค่า Rigidbody เพื่อไม่ให้ล้มพับ
+        rb.freezeRotation = true;
+        rb.useGravity = true;
+
+        // ล็อคเมาส์
         Cursor.lockState = CursorLockMode.Locked;
 
-        // 2. หากระดูกที่ชื่อ "root" เพื่อหยุดการวาร์ป
+        // หากระดูก root
         rootBone = transform.Find("root"); 
         if (rootBone == null) rootBone = transform.GetComponentInChildren<Transform>().Find("root");
 
-        // 3. ปรับขนาดตัวละครให้เตี้ยลง (ท่าคลาน) อัตโนมัติ
-        controller.height = 0.6f;
-        controller.center = new Vector3(0, 0.3f, 0);
-
-        // 4. บังคับท่าคลาน
+        // ปิด Root Motion
         if (anim != null)
         {
             anim.SetBool("isCrawling", true);
             anim.applyRootMotion = false;
         }
         
-        // 5. หากล้องอัตโนมัติถ้าไม่ได้ลากใส่
         if (cameraTransform == null && Camera.main != null) 
             cameraTransform = Camera.main.transform;
     }
@@ -49,22 +47,16 @@ public class crawl : MonoBehaviour
     void Update()
     {
         HandleMouseLook();
+    }
+
+    void FixedUpdate()
+    {
         HandleMovement();
     }
 
     void LateUpdate()
     {
-        // --- ไม้ตายแก้การวาร์ป ---
-        // สั่งให้กระดูกชื่อ root กลับมาอยู่ที่ 0,0,0 ทุกเฟรม ไม่ว่าจะขยับไปไหนก็ตาม
-        if (rootBone != null)
-        {
-            rootBone.localPosition = Vector3.zero;
-        }
-    }
-
-    void OnAnimatorMove()
-    {
-        // บล็อกแรงส่งจากแอนิเมชันถาวร
+        if (rootBone != null) rootBone.localPosition = Vector3.zero;
     }
 
     void HandleMouseLook()
@@ -90,13 +82,14 @@ public class crawl : MonoBehaviour
             if (Keyboard.current.dKey.isPressed) x = 1;
         }
 
-        Vector3 move = transform.right * x + transform.forward * z;
-        controller.Move(move.normalized * crawlSpeed * Time.deltaTime);
+        // คำนวณทิศทาง
+        Vector3 moveDir = transform.right * x + transform.forward * z;
+        moveDir = moveDir.normalized * crawlSpeed;
 
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
-        if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
+        // รักษาความเร็ว Y (แรงโน้มถ่วง) ไว้
+        rb.linearVelocity = new Vector3(moveDir.x, rb.linearVelocity.y, moveDir.z);
 
-        if (anim != null) anim.SetFloat("Speed", move.magnitude);
+        if (anim != null) anim.SetFloat("Speed", moveDir.magnitude);
     }
 }
+
