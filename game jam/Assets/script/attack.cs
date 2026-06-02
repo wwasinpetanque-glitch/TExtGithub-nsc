@@ -35,4 +35,12 @@ public class attack : MonoBehaviour
             Debug.Log("Attack Performed!");
         }
     }
+
+    // เพิ่มฟังก์ชันนี้เพื่อแก้ Error Animation Event
+    public void SetAttackEnd()
+    {
+        Debug.Log("Attack Animation Finished.");
+        // คุณสามารถใส่โค้ดที่ต้องการให้ทำตอนจบอนิเมชั่นได้ที่นี่
+    }
 }
+
